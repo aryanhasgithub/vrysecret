@@ -1,21 +1,35 @@
-from homeassistant_api import Client
-inp = input("hello")
-if inp=="on":
- with Client(
-    'http://homeassistant.local:8123/api',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMGU2NTE4YmNjNjk0OGE3ODA0NjVlN2MyMTYwYzY5YiIsImlhdCI6MTczNzM4MTIyMywiZXhwIjoyMDUyNzQxMjIzfQ.gvr3jtcEkEqU8zX2fCUNdJCFRgUscA9o1ZtGA0Xgx38'
- ) as client:
-
-    light = client.get_domain("switch")
-
-    light.turn_on(entity_id="switch.smart_socket_socket")
-else:
-    
-    with Client(
-    'http://homeassistant.local:8123/api',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMGU2NTE4YmNjNjk0OGE3ODA0NjVlN2MyMTYwYzY5YiIsImlhdCI6MTczNzM4MTIyMywiZXhwIjoyMDUyNzQxMjIzfQ.gvr3jtcEkEqU8zX2fCUNdJCFRgUscA9o1ZtGA0Xgx38'
- )  as client:
-
-     light = client.get_domain("switch")
-
-     light.turn_off(entity_id="switch.smart_socket_socket")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drop-In on Rester</title>
+</head>
+<body>
+    <h2>Connect to Rester</h2>
+    <button onclick="startCall()">Drop-In</button>
+    <script>
+        const SIGNALING_SERVER = "wss://your-twingate-ip-or-hostname:8765";
+        let pc = new RTCPeerConnection();
+        
+        async function startCall() {
+            let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            
+            let ws = new WebSocket(SIGNALING_SERVER);
+            ws.onopen = async () => {
+                let offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                ws.send(JSON.stringify({ sdp: pc.localDescription.sdp, type: 'offer' }));
+            };
+            
+            ws.onmessage = async (event) => {
+                let data = JSON.parse(event.data);
+                let answer = new RTCSessionDescription(data);
+                await pc.setRemoteDescription(answer);
+                console.log("Connected to Rester!");
+            };
+        }
+    </script>
+</body>
+</html>
